@@ -132,6 +132,7 @@ def getItem(itemName, searchLocation = True, searchInventory = True, searchEquip
 	# If a searched item's name contains the itemName parameter, add it as a possible match
 	matchingItems = []
 	exactItem = None
+	foundExactItemCounter = 0
 	# If matchingItems length is 1, then there's only one item (just return first index)
 	# Otherwise, ask the player which item they meant
 
@@ -139,7 +140,8 @@ def getItem(itemName, searchLocation = True, searchInventory = True, searchEquip
 		for item in currentLocation.itemsArray:
 			if itemName == item.name.lower():
 				exactItem = item
-				return exactItem
+				foundExactItemCounter += 1
+				# return exactItem
 			elif itemName in item.name.lower():
 				matchingItems.append(item)
 			
@@ -148,27 +150,42 @@ def getItem(itemName, searchLocation = True, searchInventory = True, searchEquip
 		for item in player.inventory:
 			if itemName == item.name.lower():
 				exactItem = item
-				return exactItem
+				foundExactItemCounter += 1
+				# return exactItem
 			if itemName in item.name.lower():
 				matchingItems.append(item)
 	if searchEquipment:
 		if player.armor is not None and itemName in player.armor.name.lower():
 			if itemName == player.armor.name.lower():
 				exactItem = player.armor
-				return exactItem
+				foundExactItemCounter += 1
+				# return exactItem
 			else:
 				matchingItems.append(player.armor)
 		if player.weapon is not None and itemName in player.weapon.name.lower():
 			if itemName == player.weapon.name.lower():
 				exactItem = player.weapon
-				return exactItem
+				foundExactItemCounter += 1
+				# return exactItem
 			else:
 				matchingItems.append(player.armor)
-	if len(matchingItems) == 1:
-		return matchingItems[0]
-	elif len(matchingItems) == 0:
-		return None
-	else:
+	
+	print("foundExactItemCounter:" + str(foundExactItemCounter))
+	print("Matching Items length:" + str(len(matchingItems)))	
+
+
+	if exactItem is not None and foundExactItemCounter == 1:
+		return exactItem
+	elif exactItem is None:
+		if len(matchingItems) == 1:
+			return matchingItems[0]
+		elif len(matchingItems) == 0:
+			return None
+		else:
+			print("I'm not sure which item you meant.")
+			# Returns "printed" to avoid printing other dialogue in other functions
+			return "printed"
+	elif exactItem is not None and foundExactItemCounter > 1:
 		print("I'm not sure which item you meant.")
 		# Returns "printed" to avoid printing other dialogue in other functions
 		return "printed"
@@ -272,10 +289,13 @@ def drop(itemName):
 	matchingItems = []
 	droppedItem = None
 	sourceArray = None
+	foundExactItemCounter = 0
 
 	for item in player.inventory:
-		# if item.name.lower() == itemName:
-		if itemName in item.name.lower():
+		if item.name.lower() == itemName:
+			droppedItem = item
+			foundExactItemCounter += 1
+		elif itemName in item.name.lower():
 			# droppedItem = item
 			matchingItems.append(item)
 			sourceArray = "inventory"
@@ -283,8 +303,10 @@ def drop(itemName):
 	# If item wasn't found in player's inventory, search player's equipment
 	if droppedItem is None:
 		if player.armor is not None:
-			# if player.armor.name.lower() == itemName:
-			if itemName in player.armor.name.lower():
+			if player.armor.name.lower() == itemName:
+				droppedItem = player.armor
+				foundExactItemCounter += 1
+			elif itemName in player.armor.name.lower():
 				# droppedItem = player.armor
 				matchingItems.append(player.armor)
 				sourceArray = "armor"
@@ -295,8 +317,11 @@ def drop(itemName):
 				# updatePlayer()
 		if player.weapon is not None:
 			if player.weapon.name.lower() == itemName:
+				droppedItem = player.weapon
+				foundExactItemCounter += 1
+			elif itemName in player.weapon.name.lower():
 				# droppedItem = player.weapon
-				matchingItems.append(player.armor)
+				matchingItems.append(player.weapon)
 
 				sourceArray = "weapon"
 				# Remove player's weapon
@@ -304,15 +329,19 @@ def drop(itemName):
 
 				# Update player
 				# updatePlayer()
-	print("Length of matching items:", len(matchingItems))
-	if len(matchingItems) == 0:
-		print("You have no such item.")
-	elif len(matchingItems) == 1:
-		droppedItem = matchingItems[0]
-	elif len(matchingItems) > 1:
-		print("I'm not sure what item you meant.")
 
-	if droppedItem is not None:
+	print("foundExactItemCounter:" + str(foundExactItemCounter))
+	print("Matching Items length:" + str(len(matchingItems)))
+
+	if droppedItem is None:
+		if len(matchingItems) == 0:
+			print("You have no such item.")
+		elif len(matchingItems) == 1:
+			droppedItem = matchingItems[0]
+		elif len(matchingItems) > 1:
+			print("I'm not sure what item you meant.")
+
+	if droppedItem is not None and foundExactItemCounter <= 1:
 		# Remove item from either inventory or equipment
 		if sourceArray == "inventory":
 			player.inventory.remove(droppedItem)
@@ -330,98 +359,116 @@ def drop(itemName):
 			print("You drop " + droppedItem.name + ".")
 		else:
 			print("You drop a " + droppedItem.name + ".")
+	elif foundExactItemCounter > 1:
+		print("I'm not sure what item you meant to drop.")
 
 
 
 # Player equips an item
 def equip(itemName):
-    global currentLocation
-    global player
+	global currentLocation
+	global player
 
-    # Find item in either player's inventory or current location
-    equippedItem = None
-    sourceArray = None
+	# Find item in either player's inventory or current location
+	equippedItem = None
+	sourceArray = None
+	matchingItems = []
+	foundExactItemCounter = 0
 
-    for item in player.inventory:
-        if item.name.lower() == itemName:
-            equippedItem = item
-            sourceArray = "inventory"
-            break
+	for item in player.inventory:
+		if item.name.lower() == itemName:
+			equippedItem = item
+			sourceArray = "inventory"
+			# break
+			foundExactItemCounter += 1
+		elif itemName in item.name.lower():
+			matchingItems.append(item)
+			sourceArray = "inventory"
 
-    if equippedItem is None:  # If item wasn't found in player's inventory
-        for item in currentLocation.itemsArray:
-            if item.name.lower() == itemName:
-                equippedItem = item
-                sourceArray = "location"
-                break
-    if equippedItem is not None:  # If item exists
-        # Check that item is a weapon or armor
-        # print("Item is a: " + equippedItem.__class__.__name__);
-        itemType = equippedItem.__class__.__name__
+	if equippedItem is None:  # If item wasn't found in player's inventory
+		for item in currentLocation.itemsArray:
+			if item.name.lower() == itemName:
+				equippedItem = item
+				sourceArray = "location"
+				# break
+				foundExactItemCounter += 1
+			elif itemName in item.name.lower():
+				matchingItems.append(item)
+				sourceArray = "location"
+	if len(matchingItems) > 1 or foundExactItemCounter > 1:
+		print("I'm not sure which item you meant to equip.")
+		return
+	elif len(matchingItems) == 1 and equippedItem is None:
+		equippedItem = matchingItems[0]
+		
+	if equippedItem is not None and foundExactItemCounter <= 1:  # If item exists
+		# Check that item is a weapon or armor
+		# print("Item is a: " + equippedItem.__class__.__name__);
+		itemType = equippedItem.__class__.__name__
 
-        if itemType in ["Armor", "Weapon"]:
-            if itemType == "Armor":
-                if player.armor is not None:  # If armor slot is filled
-                    # Put currently equipped armor in inventory
-                    player.inventory.append(player.armor)
+		if itemType in ["Armor", "Weapon"]:
+			if itemType == "Armor":
+				if player.armor is not None:  # If armor slot is filled
+					# Put currently equipped armor in inventory
+					player.inventory.append(player.armor)
 
-                # Replace armor with new armor
-                player.armor = equippedItem
-            elif itemType == "Weapon":
-                if player.weapon is not None:  # If weapon slot is filled
-                    # Put currently equipped weapon in inventory
-                    player.inventory.append(player.weapon)
+				# Replace armor with new armor
+				player.armor = equippedItem
+			elif itemType == "Weapon":
+				if player.weapon is not None:  # If weapon slot is filled
+					# Put currently equipped weapon in inventory
+					player.inventory.append(player.weapon)
 
-                # Replace weapon with new weapon
-                player.weapon = equippedItem
+				# Replace weapon with new weapon
+				player.weapon = equippedItem
 
-            # Remove item from source array
-            if sourceArray == "inventory":
-                player.inventory.remove(equippedItem)
-            elif sourceArray == "location":
-                currentLocation.itemsArray.remove(equippedItem)
+			# Remove item from source array
+			if sourceArray == "inventory":
+				player.inventory.remove(equippedItem)
+			elif sourceArray == "location":
+				currentLocation.itemsArray.remove(equippedItem)
 
-            print("You equip " + equippedItem.name + ".")
+			print("You equip " + equippedItem.name + ".")
 
-            # Update player:
-            updatePlayer()
+			# Update player:
+			updatePlayer()
 
-        else:  # Item isn't armor or weapon; cannot be equippedItem
-            print(equippedItem.name + " is not equippable.")
-    else:  # If item wasn't found
-        print("You have no such item.")
+		else:  # Item isn't armor or weapon; cannot be equippedItem
+			print(equippedItem.name + " is not equippable.")
+	else:  # If item wasn't found
+		print("You have no such item.")
 
 
 # Player unequips an item
 def unequip(itemName):
-    global player
+	global player
 
-    unequippedItem = None
+	unequippedItem = None
 
-    # Check if item is currently equipped
-    if player.armor is not None:
-        if player.armor.name.lower() == itemName:
-            unequippedItem = player.armor
+	# Check if item is currently equipped
+	if player.armor is not None:
+		if itemName in player.armor.name.lower():
+			unequippedItem = player.armor
 
-            # Remove player's armor
-            player.armor = None
-    if player.weapon is not None:
-        if player.weapon.name.lower() == itemName:
-            unequippedItem = player.weapon
+			# Remove player's armor
+			player.armor = None
+	if player.weapon is not None:
+		if itemName in player.weapon.name.lower():
+			unequippedItem = player.weapon
 
-            # Remove player's weapon
-            player.weapon = None
+			# Remove player's weapon
+			player.weapon = None
 
-    if unequippedItem is not None:
-        # Place item in player's inventory
-        player.inventory.append(unequippedItem)
+	if unequippedItem is not None:
+		# Place item in player's inventory
+		player.inventory.append(unequippedItem)
 
-        print("You unequip " + unequippedItem.name + ".")
+		print("You unequip " + unequippedItem.name + ".")
 
-        # Update player
-        updatePlayer()
-    else:
-        print("You have no such item equipped.")
+		# Update player
+		updatePlayer()
+	else:
+		print("You have no such item equipped.")
 
 
 # Player examines an item

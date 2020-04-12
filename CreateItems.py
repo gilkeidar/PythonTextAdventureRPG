@@ -20,4 +20,6 @@ def createItems():
 
 	items.append(Consumable(3, "Pure Healing Potion", "A bottle that contains a purified healing potion, making it more potent.", "Healing", 20))
 
+	items.append(Weapon(4, "Short Sword", "A short sword.", 10))
+
 	return items
