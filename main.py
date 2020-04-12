@@ -14,14 +14,15 @@
 ### This can be a really cool game mechanic e.g. "The Evil Wizard cast his spell, 'Rearrangum' (or something), and the whole world fell to disarray. Places that used to be next to each other suddenly were miles apart. Now, the player has to explore what is essentially an entire new map! Cool, eh?
 
 import random
-import time
-from termcolor import colored
-from colored import fg, bg, attr
+# import time
+# from termcolor import colored
+# from colored import fg, bg, attr
 
 from classes.Character.Character import Character
 from classes.Character.Player import Player
 from CreateLocations import createLocations, createPaths, getNeighbors
 from CreateItems import createItems
+from CreateMonsters import createMonsters
 from utility import textRoomFormatter, unrecognizedCommand, traversalText
 
 # print(colored("Test!", "yellow", attrs = ["bold"]))
@@ -34,46 +35,24 @@ from utility import textRoomFormatter, unrecognizedCommand, traversalText
 # Location -> World, (everywhere that isnt the following:)
 #			  Town, Dungeon, Boss Room
 
-# # create a test character
 
-# char1 = Character("Bob")
-# print(char1.name)
 
-# Map: a network graph (nodes and edges)
+#### Variables of Ultimate Power! ####
 
 # item array
 itemArray = []
 
-# instantiating items
-itemArray = createItems()
+# monster array
+monsterArray = []
 
 # arrays of locations and paths (last since they include items & characters)
 locationArray = []
 pathArray = []
 
-# instantiating locations and paths
-locationArray = createLocations(itemArray)
-pathArray = createPaths()
-
-for location in locationArray:
-    location.surroundingLocations = getNeighbors(location.locationId,
-                                                 pathArray)
-
-# for location in locationArray:
-# 	for attr, value in location.__dict__.items():
-# 		print(attr, value)
-# 	print()
-# for path in pathArray:
-# 	for attr, value in path.__dict__.items():
-# 		print(attr,value)
-# 	print()
-
-#### Variables of Ultimate Power! ####
-
 # Current Location
-currentLocation = locationArray[0]
+currentLocation = None
 oldLocation = []
-player = Player("Player", 250, 1)
+player = None
 
 # Directions Array
 directions = [
@@ -84,11 +63,41 @@ directions = [
 # Booleans
 printLocationDetails = False  # Used for "look" command to show location info even if currentLocation isn't new
 
+# Current game state
+states = ["Travel", "Combat"]
+state = states[0] # Starts with Travel as the main state
+
 #### Variables of Ultimate Power! ####
 
 
 
 #### Methods of Ultimate Power!   ####
+
+# Initialize game variables
+def initializeGame():
+	global itemArray
+	global monsterArray
+	global locationArray
+	global pathArray
+	global currentLocation
+	global player
+
+	# instantiating items
+	itemArray = createItems()
+
+	# instantiating monsters
+	monsterArray = createMonsters()
+
+	# instantiating locations and paths
+	locationArray = createLocations(itemArray, monsterArray)
+	pathArray = createPaths()
+
+	# Initialize all locations' surroundingLocations arrays
+	for location in locationArray:
+		location.surroundingLocations = getNeighbors(location.locationId, pathArray)
+	
+	currentLocation = locationArray[0]
+	player = Player("Player", 250, 1)
 
 # Update player
 def updatePlayer():
@@ -170,8 +179,8 @@ def getItem(itemName, searchLocation = True, searchInventory = True, searchEquip
 			else:
 				matchingItems.append(player.armor)
 	
-	print("foundExactItemCounter:" + str(foundExactItemCounter))
-	print("Matching Items length:" + str(len(matchingItems)))	
+	# print("DEBUG foundExactItemCounter:" + str(foundExactItemCounter))
+	# print("DEBUG Matching Items length:" + str(len(matchingItems)))	
 
 
 	if exactItem is not None and foundExactItemCounter == 1:
@@ -335,8 +344,8 @@ def drop(itemName):
 				# Update player
 				# updatePlayer()
 
-	print("foundExactItemCounter:" + str(foundExactItemCounter))
-	print("Matching Items length:" + str(len(matchingItems)))
+	# print("DEBUG foundExactItemCounter: " + str(foundExactItemCounter))
+	# print("DEBUG Matching Items length: " + str(len(matchingItems)))
 
 	if droppedItem is None:
 		if len(matchingItems) == 0:
@@ -560,6 +569,9 @@ def helpFunction():
 	for command in commands:
 		print(command + " - " + commands[command])
 
+
+
+
 #### Methods of Ultimate Power!   ####
 
 def inputCommands(userInput):
@@ -671,7 +683,10 @@ def gameLoop():
 				currentLocation.explored = True
 
 			if (len(currentLocation.monstersArray) > 0):
-				print("There be monsters.")
+				# print("There be monsters.")
+				monsterString = textRoomFormatter("There ", "monsters", currentLocation)
+				
+				print(monsterString)
 			if (len(currentLocation.itemsArray) > 0):
 				# print("There be items.")
 				itemsString = textRoomFormatter("You see ", "items",
@@ -686,4 +701,5 @@ def gameLoop():
 
 
 # start the game!
+initializeGame()
 gameLoop()

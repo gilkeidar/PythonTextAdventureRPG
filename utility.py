@@ -12,6 +12,7 @@ def textRoomFormatter(starterString, typeFormat, currentLocation):
 
 	directionsFormat = typeFormat == "directions"
 	itemsFormat = typeFormat == "items"
+	monstersFormat = typeFormat == "monsters"
 	
 
 	if directionsFormat:
@@ -20,14 +21,23 @@ def textRoomFormatter(starterString, typeFormat, currentLocation):
 	elif itemsFormat:
 		# form of element is: object
 		arrayToLoop = currentLocation.itemsArray
+	elif monstersFormat:
+		# form of element is: object
+		arrayToLoop = currentLocation.monstersArray
 
 	if(len(arrayToLoop) == 1):
 		if directionsFormat:
 			starterString += arrayToLoop[0][1] + "."
 		elif itemsFormat:
-			if not arrayToLoop[0].name.split(" ")[0] == "The":
+			if not arrayToLoop[0].name.lower().split(" ")[0] == "the":
 				starterString += "a "
 			starterString += arrayToLoop[0].name + " here."
+		elif monstersFormat:
+			starterString += "is "
+			if not arrayToLoop[0].name.lower().split(" ")[0] == "the":
+				starterString += "a "
+			starterString += arrayToLoop[0].name + " here."
+				
 	else:
 		for i in range(0, len(arrayToLoop)):
 			element = arrayToLoop[i]
@@ -35,22 +45,22 @@ def textRoomFormatter(starterString, typeFormat, currentLocation):
 			if(i == len(arrayToLoop) - 1 and len(arrayToLoop) > 1):
 				if directionsFormat:
 					starterString += "and " + element[1] + "."
-				elif itemsFormat:
-					if not arrayToLoop[-1].name.split(" ")[0] == "The":
+				elif itemsFormat or monstersFormat:
+					if not arrayToLoop[-1].name.lower().split(" ")[0] == "the":
 						starterString += "and a " + element.name + " here."
 					else:
 						starterString += "and " + element.name + " here."
 			elif len(arrayToLoop) == 2:
 				if directionsFormat:
 					starterString += element[1] + " "
-				elif itemsFormat:
+				elif itemsFormat or monstersFormat:
 					starterString += element.name + " "
 			else:
 				if directionsFormat:
 					starterString += element[1] + ", "
-				elif itemsFormat:
+				elif itemsFormat or monstersFormat:
 					if element == arrayToLoop[0]:
-						if not arrayToLoop[0].name.split(" ")[0] == "The":
+						if not arrayToLoop[0].name.lower().split(" ")[0] == "the":
 							starterString += "a "
 					starterString += element.name + ", "
 
