@@ -22,7 +22,7 @@ from classes.Character.Character import Character
 from classes.Character.Player import Player
 from CreateLocations import createLocations, createPaths, getNeighbors
 from CreateItems import createItems
-from utility import textRoomFormatter, unrecognizedCommand
+from utility import textRoomFormatter, unrecognizedCommand, traversalText
 
 # print(colored("Test!", "yellow", attrs = ["bold"]))
 
@@ -194,25 +194,30 @@ def getItem(itemName, searchLocation = True, searchInventory = True, searchEquip
 
 # Movement function - for when the player moves!
 def movement(direction):
-    global directions
-    global currentLocation
-    global oldLocation
+	global directions
+	global currentLocation
+	global oldLocation
 
-    shortcutDirections = ["n", "s", "e", "w", "nw", "ne", "sw", "se"]
-    # parse directions if not in the same form as in neighborLocation array
-    if (direction in shortcutDirections):
-        direction = directions[shortcutDirections.index(direction)]
+	shortcutDirections = ["n", "s", "e", "w", "nw", "ne", "sw", "se"]
+	# parse directions if not in the same form as in neighborLocation array
+	if (direction in shortcutDirections):
+		direction = directions[shortcutDirections.index(direction)]
 
-    for neighborLocation in currentLocation.surroundingLocations:
-        if (neighborLocation[1] == direction):
-            locationId = neighborLocation[0]
-            location = locationArray[locationId]
-            print("You make your way " + direction + " to " + location.name +
-                  "...")
-            currentLocation = location
-# if didn't change rooms (user tried to go in a way they can't)
-    if (currentLocation == oldLocation):
-        print("You cannot go that way.")
+	for neighborLocation in currentLocation.surroundingLocations:
+		if (neighborLocation[1] == direction):
+			locationId = neighborLocation[0]
+			location = locationArray[locationId]
+			# Print traversal text based on the path type
+			pathType = neighborLocation[2]
+			# print("path type: " + pathType)
+
+			# print("You make your way " + direction + " to " + location.name +
+			# 		"...")
+			print(traversalText(pathType, direction, location.name))
+			currentLocation = location
+	# if didn't change rooms (user tried to go in a way they can't)
+	if (currentLocation == oldLocation):
+		print("You cannot go that way.")
 
 
 # Print the player's inventory and stats
@@ -537,6 +542,24 @@ def examine(itemName):
 		print("You see no such item.")
 
 
+# Lists all commands
+def helpFunction():
+	print("Here is a list of commands I understand:")
+	print()
+	commands = { 
+		"look": "Describes the surrounding environment.",
+		"inventory" : "Shows your inventory, equipment, and stats.",
+		"help" : "Displays this list of commands.",
+		"go [direction]" : "Lets you travel in a particular direction. The 'go' is optional.",
+		"get/take/pick up [item]" : "Takes an item from the surroundings and places it in your inventory.",
+		"drop [item]" : "Drops an item from your inventory or equipment and places it in the surroundings.",
+		"equip [item]" : "Takes an equippable item from the surroundings or your inventory and places it in the relevant equipment slot.",
+		"unequip [item]" : "Unequips an item from one of your equipment slots and places it in your inventory.",
+		"examine/inspect/appraise [item]" : "Displays information about the examined item."
+		}
+	for command in commands:
+		print(command + " - " + commands[command])
+
 #### Methods of Ultimate Power!   ####
 
 def inputCommands(userInput):
@@ -556,6 +579,9 @@ def inputCommands(userInput):
 			printLocationDetails = True
 		elif (formattedInput[0] in ["inventory", "i"]):  # Inventory command
 			printInventory()
+		elif formattedInput[0] == "help": # Help command
+			helpFunction()
+
 		# if player typed a non-recognized command or string
 		else:
 			# Thanks for the solution, Jean Francois Fabre! (Stack Overflow)

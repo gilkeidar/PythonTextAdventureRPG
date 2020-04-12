@@ -15,9 +15,9 @@ def getNeighbors(locationId, pathArray):
 	locations = []
 	for path in pathArray:
 		if(path.source == locationId):
-			locations.append([path.target, path.directionST])
+			locations.append([path.target, path.directionST, path.pathType])
 		elif(path.target == locationId):
-			locations.append([path.source, path.directionTS])
+			locations.append([path.source, path.directionTS, path.pathType])
 	return locations
 
 def createPaths():

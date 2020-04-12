@@ -29,9 +29,10 @@ def textRoomFormatter(starterString, typeFormat, currentLocation):
 				starterString += "a "
 			starterString += arrayToLoop[0].name + " here."
 	else:
-		for element in arrayToLoop:
+		for i in range(0, len(arrayToLoop)):
+			element = arrayToLoop[i]
 			# if this location is the last one in the list
-			if(element == arrayToLoop[-1] and len(arrayToLoop) > 1):
+			if(i == len(arrayToLoop) - 1 and len(arrayToLoop) > 1):
 				if directionsFormat:
 					starterString += "and " + element[1] + "."
 				elif itemsFormat:
@@ -69,3 +70,11 @@ def unrecognizedCommand(containsWords = True):
 		"Sorry, what did you say?", "Did you say something?", "Sorry?"]
 	response = random.choice(responses)
 	return response
+
+
+def traversalText(pathType, direction, destinationName):
+	if pathType == "Walking":
+		return "You make your way " + direction + " to " + destinationName + "..."
+	elif pathType == "Climbing":
+		return "You climb " + direction + " to " + destinationName + "..."
+	
