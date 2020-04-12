@@ -1,0 +1,23 @@
+[[package]]
+category = "main"
+description = "Simple library for color and formatting to terminal"
+name = "colored"
+optional = false
+python-versions = "*"
+version = "1.4.2"
+
+[[package]]
+category = "main"
+description = "ANSII Color formatting for output in terminal."
+name = "termcolor"
+optional = false
+python-versions = "*"
+version = "1.1.0"
+
+[metadata]
+content-hash = "259a05fb6b68f057828287e294fc2902dac577151b7689f53650ac882330a6f3"
+python-versions = "^3.7"
+
+[metadata.hashes]
+colored = ["056fac09d9e39b34296e7618897ed1b8c274f98423770c2980d829fd670955ed"]
+termcolor = ["1d6d69ce66211143803fbc56652b41d73b4a400a2891d7bf7a1cdf4c02de613b"]
