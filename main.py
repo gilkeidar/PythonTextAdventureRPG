@@ -701,7 +701,7 @@ def use(itemName):
 					updatePlayer()
 
 		except:
-			print("This item is not usable")
+			print(usedItem.name + " is not usable.")
 	elif usedItem is None:
 		print("You see no such item.");
 
