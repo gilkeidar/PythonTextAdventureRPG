@@ -29,3 +29,5 @@ class Player(Character):
 		self.armor = None
 		self.weapon = None
 
+		# Change to equipment dictionary
+

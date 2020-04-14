@@ -570,6 +570,20 @@ def helpFunction():
 		print(command + " - " + commands[command])
 
 
+# Use [item] command
+def use(itemName):
+	# Get item, can be in any of the arrays
+	usedItem = getItem(itemName)
+
+	if usedItem is not None and usedItem != "printed": # Item exists
+		useMethod = getattr(usedItem, "use", None)
+		if callable(useMethod):
+			print("You use the " + usedItem.name)
+		else:
+			print("This item is not usable.")
+	elif usedItem is None:
+		print("You see no such item.");
+
 
 
 #### Methods of Ultimate Power!   ####
@@ -653,7 +667,8 @@ def inputCommands(userInput):
 			# for i in range(2, len(formattedInput)):
 			# 	itemString += " " + formattedInput[i]
 			examine(getItemName(formattedInput, 1))
-
+		elif formattedInput[0] in ["use"]: # Use item command
+			use(getItemName(formattedInput,1))
 		# if player typed a non-recognized command or string
 		else:
 			print(unrecognizedCommand())
