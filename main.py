@@ -207,6 +207,42 @@ def getItem(itemName, searchLocation = True, searchInventory = True, searchEquip
 		# Returns "printed" to avoid printing other dialogue in other functions
 		return {"item": "printed", "source": None}
 
+def getCharacter(characterName):
+	global currentLocation
+
+	matchingCharacters = []
+	exactCharacter = []
+
+	# Will NPCs also be in the monsters array? Maybe change it so
+	# It's a characters array instead
+	for character in currentLocation.monstersArray:
+		if characterName == character.name.lower():
+			# Exact match
+			exactCharacter.append(character)
+			# print("Found an exact match!")
+		elif characterName in character.name.lower():
+			# Matching Character
+			matchingCharacters.append(character)
+	
+	# Prioritize exact matches over non-exact matches
+	if len(exactCharacter) >= 1:
+		if len(exactCharacter) == 1:
+			return {"character": exactCharacter[0]}
+		else:
+			# If there are more than one exact characters (shouldn't happen?)
+			print("I'm not sure to which character you're referring.")
+			return {"character": "printed"}
+	elif len(matchingCharacters) >= 1:
+		if len(matchingCharacters) == 1:
+			return {"character" : matchingCharacters[0]}
+		else:
+			print("I'm not sure to which character you're referring.")
+			return {"character": "printed"}
+	else: # Character not found
+		return {"character": None}
+
+
+
 
 
 # Movement function - for when the player moves!
@@ -638,7 +674,34 @@ def examine(itemName):
 			print("Type: " + itemType)
 		
 	elif examinedItem != "printed": # If item still wasn't found, player doesn't have the item
-		print("You see no such item.")
+		# Check whether it's a character
+		characterDictionary = getCharacter(itemName)
+		examinedCharacter = characterDictionary["character"]
+
+		if examinedCharacter is not None and examinedCharacter != "printed":
+			# Print character info
+			characterType = examinedCharacter.__class__.__name__
+
+			if examinedCharacter.name.lower().split(" ")[0] == "the":
+				print("You examine " + examinedCharacter.name + ":")
+			else:
+				print("You examine the " + examinedCharacter.name + ":")
+			
+			print()
+			print(examinedCharacter.description)
+			print()
+
+			if characterType == "Monster":
+				print("Type: Monster | Attack: " + str(examinedCharacter.attack) + " | Defense: " + str(examinedCharacter.defense))
+			elif characterType == "NPC":
+				print("Type: Person | Role: " + examinedCharacter.role)
+			else:
+				print("Type: " + characterType)
+			
+		elif examinedCharacter != "printed":
+			print("You see no such thing.")
+	
+
 
 
 # Lists all commands
