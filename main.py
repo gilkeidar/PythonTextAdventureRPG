@@ -345,24 +345,163 @@ def getItem2(itemName, searchLocation = True, searchInventory = True, searchEqui
 		if len(matchingItems) == 1:
 			return matchingItems[0]
 		else:
-			# Unknown item
-			print("I'm not sure which item you meant.")
-			return {"item" : "printed", "source": None}
-			# uniqueItemsAndLocations = [matchingItems[0]] # add first entry, doesn't need to be checked
-			# for itemDictionary in matchingItems:
-			# 	# Check if the source array of the item dictionary isn't in uniqueItemsAndLocations
-			# 	for element in uniqueItemsAndLocations:
-			# 		if element["source"] != itemDictionary["source"]:
-			# 			uniqueItemsAndLocations.append(itemDictionary)
-			# 			break
+			# Multiple matches, compare to see if they're in different arrays
+			# If they're in the same array, just return one of them
+
+			# I think this isn't relevant to matching items, since they're all
+			# Probably different anyway? What about multiple identical matches
+			# That are in the same place
+			uniqueItemsAndLocations = [matchingItems[0]]
+			for itemDictionary in matchingItems:
+				if not (itemDictionary in uniqueItemsAndLocations):
+					uniqueItemsAndLocations.append(itemDictionary)
 			
-			# # Now that uniqueItemsAndLocations is filled, check i
+			# Now uniqueItemsAndLocations should have only unique items that are unique in both item and source values
+			# (each has a different source value)
+			if len(uniqueItemsAndLocations) == 1 or arrayImportance == False:
+				return uniqueItemsAndLocations[0]
+			else:
+				# Ask player which item he meant
+				askString = "Which item did you mean, "
+				for itemDictionary in uniqueItemsAndLocations:
+					if itemDictionary == uniqueItemsAndLocations[-1]:
+						askString += "or "
+					if itemDictionary["item"].name.lower().split(" ")[0] == "the":
+						askString += itemDictionary["item"].name
+					else:
+						askString += "the " + itemDictionary["item"].name
+					if itemDictionary["source"] == "location":
+						askString += " on the ground"
+					elif itemDictionary["source"] == "inventory":
+						askString += " in your inventory"
+					elif itemDictionary["source"] == "armor":
+						askString += " that you're wearing"
+					elif itemDictionary["source"] == "weapon":
+						askString += " that you're wielding"
+					if itemDictionary == uniqueItemsAndLocations[-1]:
+						askString += "?"
+					else:
+						askString += ", "
+
+				# Get user input
+				while True:
+					print(askString)
+					userInput = input("> ")
+					formattedInput = userInput.lower()
+					inputArray = formattedInput.split(" ")
+
+					# Needs to specify two things potentially - more detail in the name &
+					# More detail in the location, so
+					# Look for --> "ground", "inventory", etc.
+					# And look for --> more detail in the name 
+					# How to do this?
+					# Well, keep asking until you zero in on one possible item
+
+					# score based approach? Split input into an array, then check each
+					# string in the array to see if it's in a string "[item name] [location]" (for each object)
+					# Then the object with the highest score is the probable choice?
+					# But you need to check that there might be an exact match for the item name
+
+					listOfStrings = []
+
+					for itemDictionary in uniqueItemsAndLocations:
+						# Could the "The" throw it off in some items? Maybe remove it
+						# to ensure that it doesn't get extra points (since the user might say
+						# get the short sword on the ground, even though the "the" is not part of the name)
+						itemName = itemDictionary["item"].name.lower()
+						if "the" in itemName:
+							# Remove "the" from item name
+							itemName = itemName.replace("the","")
+						itemString = itemName + " "
+
+						if itemDictionary["source"] == "inventory":
+							itemString += "inventory"
+						elif itemDictionary["source"] == "location":
+							itemString += "ground location"
+						elif itemDictionary["source"] == "armor":
+							itemString += "armor wearing"
+						elif itemDictionary["source"] == "weapon":
+							itemString += "weapon wielding"
+						
+						listOfStrings.append({"itemDictionary": itemDictionary, "string": itemString, "points": 0})
+					
+					# Now that I have the strings and the points set, loop over the input array
+					# And add points to each string that contains the word in the array
+					for word in inputArray:
+						for stringDictionary in listOfStrings:
+							if word in stringDictionary["string"]:
+								stringDictionary["points"] += 1
+					
+					# Get item with most points
+					itemsWithMostPoints = [] # need array in case of tie
+					itemsWithExactMatches = []
+					maximumPoints = 0
+					# Find the maximum value
+					for stringDictionary in listOfStrings:
+						if stringDictionary["points"] > maximumPoints:
+							maximumPoints = stringDictionary["points"]
+					# Get the items with the maximum value
+					for stringDictionary in listOfStrings:
+						if stringDictionary["points"] == maximumPoints:
+							itemsWithMostPoints.append(stringDictionary["itemDictionary"])
+							print("Winner: " + stringDictionary["string"] + " | points: " + str(stringDictionary["points"]))
+
+					# Get exact matches
+					# Construct strings with the amount of words in the item name
+					for stringDictionary in listOfStrings:
+						itemName = stringDictionary["itemDictionary"]["item"].name.lower()
+						itemNameArray = itemName.split(" ")
+						nameLength = len(itemNameArray)
+						print("itemName: " + itemName)
+
+						# Construct strings from the input array to see if they're an exact match. (strings have to be the same length as the name)
+						numberOfTrials = len(inputArray) - nameLength + 1
+						for i in range(numberOfTrials):
+							# Construct string from input array using i as the first index,
+							# Then compare it with the itemName
+							testString = ""
+							for j in range(i,nameLength + i):
+								testString += inputArray[j] + " "
+							print("test string: " + testString)
+							
+							if testString.strip() == itemName:
+								print("exact match: " + testString)
+								itemsWithExactMatches.append(stringDictionary["itemDictionary"])
+								break
+
+						
+					
+					# If there's only one winner, return that. If not, then try again.
+					# Prioritize exact matches
+					if len(itemsWithExactMatches) == 1:
+						return itemsWithExactMatches[0]
+					if len(itemsWithMostPoints) == 1:
+						return itemsWithMostPoints[0]
+
+
+					# arrayOfItems = uniqueItemsAndLocations.copy()
+					# newArrayOfItems = []
+
+
+
+					# # Filter based on location data
+					# for itemDictionary in arrayOfItems:
+					# 	# Note that this means that the keywords inventory, location, armor, wearing
+					# 	# weapon, and wielding cannot be part of the item names, since then this algorithm
+					# 	# will think that it is location data
+					# 	# maybe filter than by item data first?
+					# 	if "inventory" in userInput and itemDictionary["source"] == "inventory":
+					# 		newArrayOfItems.append(itemDictionary)
+					# 	elif "location" in userInput and itemDictionary["source"] == "location":
+					# 		newArrayOfItems.append(itemDictionary)
+					# 	elif ("armor" in userInput or "wearing" in userInput) and itemDictionary["source"] == "armor":
+					# 		newArrayOfItems.append(itemDictionary)
+					# 	elif ("weapon" in userInput or "wielding" in userInput) and itemDictionary["source"] == "weapon":
+					# 		newArrayOfItems.append(itemDictionary)
 
 
 		
 		
-
-
 
 def getCharacter(characterName):
 	global currentLocation
@@ -519,7 +658,7 @@ def drop(itemName):
 			player.equipment["armor"] = None
 			updatePlayer()
 		elif source == "weapon":
-			player.weapon = None
+			player.equipment["weapon"] = None
 			updatePlayer()
 	elif droppedItem is None:
 		print("You have no such item.")
