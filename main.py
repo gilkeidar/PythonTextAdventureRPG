@@ -67,6 +67,10 @@ printLocationDetails = False  # Used for "look" command to show location info ev
 states = ["Travel", "Combat"]
 state = states[0] # Starts with Travel as the main state
 
+# Combat turn (only relevant in combat)
+currentTurn = 0
+whoseTurn = None # Player or monster
+
 #### Variables of Ultimate Power! ####
 
 
@@ -207,6 +211,159 @@ def getItem(itemName, searchLocation = True, searchInventory = True, searchEquip
 		# Returns "printed" to avoid printing other dialogue in other functions
 		return {"item": "printed", "source": None}
 
+
+def getItem2(itemName, searchLocation = True, searchInventory = True, searchEquipment = True, arrayImportance = True):
+	global currentLocation
+	global player
+
+	# For each item, store dictionary {"item": item, "source": source}
+	matchingItems = []
+	exactItem = [] 
+
+	# Search each location, and prioritize exact matches over partial matches
+	if searchLocation:
+		for item in currentLocation.itemsArray:
+			if itemName == item.name.lower():
+				# Found an exact match
+				exactItem.append({"item" : item, "source" : "location"})
+			elif itemName in item.name.lower():
+				# Found a partial match
+				matchingItems.append({"item": item, "source": "location"})
+	if searchInventory:
+		for item in player.inventory:
+			if itemName == item.name.lower():
+				# Found an exact match
+				exactItem.append({"item" : item, "source" : "inventory"})
+			elif itemName in item.name.lower():
+				# Found a partial match
+				matchingItems.append({"item": item, "source": "inventory"})
+	if searchEquipment:
+		if player.equipment["armor"] is not None:
+			if itemName == player.equipment["armor"].name.lower():
+				# Found an exact match
+				exactItem.append({"item": player.equipment["armor"], "source" : "armor"})
+			elif itemName in player.equipment["armor"].name.lower():
+				# Found a partial match
+				matchingItems.append({"item": player.equipment["armor"], "source": "armor"})
+		if player.equipment["weapon"] is not None:
+			if itemName == player.equipment["weapon"].name.lower():
+				# Found an exact match
+				exactItem.append({"item": player.equipment["weapon"], "source" : "weapon"})
+			elif itemName in player.equipment["weapon"].name.lower():
+				# Found a partial match
+				matchingItems.append({"item": player.equipment["weapon"], "source": "weapon"})
+	
+	# Review results:
+	# Possibilities:
+	# 0 in E and 0 in M -> Item not found
+	# 1 in E and 0 in M -> Found one exact match, return it
+	# 0 in E and 1 in M -> found one partial match, return it
+	# 1 in E and 1 in M -> found one in both, prioritize exact, return exact match
+	# 0 in E and 2 in M -> found 2 in matching, unknown which is which --> if in different arrays, ask player which object he/she meant
+	# 2 in E and 0 in M -> found 2 in exact, unknown which is which --> if in different arrays, ask player which object he/she meant
+
+
+
+	print("matchingItems Length: " + str(len(matchingItems)))
+	print("exactItem Length: " + str(len(exactItem)))
+
+	if len(matchingItems) == 0 and len(exactItem) == 0:
+		# No item found; return None
+		return {"item": None, "source": None}
+	if len(exactItem) >= 1: # Prioritize exact match over not exact matches
+		if len(exactItem) == 1:
+			# Only one match, return this one
+			return exactItem[0]
+		else:
+			# Multiple matches, compare to see if they're in different arrays
+			# If they're in the same array, just return one of them
+			uniqueItemsAndLocations = []
+			for itemDictionary in exactItem:
+				if not (itemDictionary in uniqueItemsAndLocations):
+					uniqueItemsAndLocations.append(itemDictionary)
+			
+			# Now uniqueItemsAndLocations should have only unique items that are unique in both item and source values
+			# (each has a different source value)
+			if len(uniqueItemsAndLocations) == 1 or arrayImportance == False:
+				return uniqueItemsAndLocations[0]
+			else:
+				# Ask player which item he meant
+				askString = "Which item did you mean, "
+				for itemDictionary in uniqueItemsAndLocations:
+					if itemDictionary == uniqueItemsAndLocations[-1]:
+						askString += "or "
+					if itemDictionary["item"].name.lower().split(" ")[0] == "the":
+						askString += itemDictionary["item"].name
+					else:
+						askString += "the " + itemDictionary["item"].name
+					if itemDictionary["source"] == "location":
+						askString += " on the ground"
+					elif itemDictionary["source"] == "inventory":
+						askString += " in your inventory"
+					elif itemDictionary["source"] == "armor":
+						askString += " that you're wearing"
+					elif itemDictionary["source"] == "weapon":
+						askString += " that you're wielding"
+					if itemDictionary == uniqueItemsAndLocations[-1]:
+						askString += "?"
+					else:
+						askString += ", "
+
+				# Get user input
+				while True:
+					print(askString)
+					userInput = input("> ")
+					formattedInput = userInput.lower()
+
+					if "inventory" in formattedInput:
+						# Return exact item whose source is from inventory
+						for itemDictionary in uniqueItemsAndLocations:
+							if itemDictionary["source"] == "inventory":
+								return itemDictionary
+					elif "ground" in formattedInput:
+						# Return exact item whose source is from inventory
+						for itemDictionary in uniqueItemsAndLocations:
+							if itemDictionary["source"] == "location":
+								return itemDictionary
+					elif "armor" in formattedInput or "wearing" in formattedInput:
+						# Return exact item whose source is from inventory
+						for itemDictionary in uniqueItemsAndLocations:
+							if itemDictionary["source"] == "armor":
+								return itemDictionary
+					elif "weapon" in formattedInput or "wielding" in formattedInput:
+						# Return exact item whose source is from inventory
+						for itemDictionary in uniqueItemsAndLocations:
+							if itemDictionary["source"] == "weapon":
+								return itemDictionary
+				
+				return {"item": "printed", "source": None}
+				# Needs a new command with the form {the} [item name] in {source}
+				# Maybe flip a global boolean switch so that the command works? (Can't use this command all
+				# the time, only when prompted)
+	
+	if len(matchingItems) >= 1:
+		if len(matchingItems) == 1:
+			return matchingItems[0]
+		else:
+			# Unknown item
+			print("I'm not sure which item you meant.")
+			return {"item" : "printed", "source": None}
+			# uniqueItemsAndLocations = [matchingItems[0]] # add first entry, doesn't need to be checked
+			# for itemDictionary in matchingItems:
+			# 	# Check if the source array of the item dictionary isn't in uniqueItemsAndLocations
+			# 	for element in uniqueItemsAndLocations:
+			# 		if element["source"] != itemDictionary["source"]:
+			# 			uniqueItemsAndLocations.append(itemDictionary)
+			# 			break
+			
+			# # Now that uniqueItemsAndLocations is filled, check i
+
+
+		
+		
+
+
+
 def getCharacter(characterName):
 	global currentLocation
 
@@ -240,9 +397,6 @@ def getCharacter(characterName):
 			return {"character": "printed"}
 	else: # Character not found
 		return {"character": None}
-
-
-
 
 
 # Movement function - for when the player moves!
@@ -319,7 +473,7 @@ def take(itemName):
 		#     if (itemName == item.name.lower()):
 		#         takenItem = item
 		#         break
-		takenItemDictionary = getItem(itemName, True, False, False)
+		takenItemDictionary = getItem2(itemName, True, False, False)
 		takenItem = takenItemDictionary["item"]
 		
 		if takenItem is not None and takenItem != "printed":  # If item exists
@@ -345,7 +499,7 @@ def drop(itemName):
 	global player
 
 	# Get item to drop:
-	droppedItemDictionary = getItem(itemName, False, True, True)
+	droppedItemDictionary = getItem2(itemName, False, True, True)
 	droppedItem = droppedItemDictionary["item"]
 	source = droppedItemDictionary["source"]
 
@@ -455,7 +609,7 @@ def equip(itemName):
 	global currentLocation
 	global player
 
-	equippedItemDictionary = getItem(itemName, True, True, False)
+	equippedItemDictionary = getItem2(itemName, True, True, False)
 	equippedItem = equippedItemDictionary["item"]
 	source = equippedItemDictionary["source"]
 
@@ -565,7 +719,7 @@ def equip(itemName):
 def unequip(itemName):
 	global player
 
-	unequippedItemDictionary = getItem(itemName, False, False, True)
+	unequippedItemDictionary = getItem2(itemName, False, False, True)
 	unequippedItem = unequippedItemDictionary["item"]
 	source = unequippedItemDictionary["source"]
 
@@ -638,13 +792,18 @@ def examine(itemName):
 	# 	elif player.weapon is not None and player.weapon.name.lower() == itemName:
 	# 		examinedItem = player.weapon
 
-	examinedItemDictionary = getItem(itemName)
+	examinedItemDictionary = getItem2(itemName, True, True, True, False)
 	examinedItem = examinedItemDictionary["item"]
 
 	# If item was found, print its information
 	if examinedItem is not None and examinedItem != "printed":
 
 		itemType = examinedItem.__class__.__name__
+
+		# print("class:" + examinedItem.__bases__)
+
+		if itemType in ["Potion"]: # classes that inherit from consumable should be displayed the same way
+			itemType = "Consumable"
 
 		if examinedItem.name.lower().split(" ")[0] == "the":
 			print("You examine " + examinedItem.name + ":")
@@ -728,7 +887,7 @@ def use(itemName):
 	global player
 	global currentLocation
 	# Get item, can be in any of the arrays
-	usedItemDictionary = getItem(itemName)
+	usedItemDictionary = getItem2(itemName)
 	usedItem = usedItemDictionary["item"]
 	source = usedItemDictionary["source"]
 
@@ -768,6 +927,32 @@ def use(itemName):
 	elif usedItem is None:
 		print("You see no such item.");
 
+
+# User attacks a monster, gaining the first turn in combat
+def attack(monsterName):
+	global currentLocation
+	global player
+	global state
+	global states
+	global currentTurn
+	global whoseTurn
+
+	monsterDictionary = getCharacter(monsterName)
+	monster = monsterDictionary["character"]
+
+	if monster is not None and monster != "printed":
+		# Monster exists
+
+		# If player starts combat:
+		if state == states[0]: # If current state is peaceful
+			# Turn state into combat
+			state = states[1]
+			whoseTurn = player
+			currentTurn = 0
+		
+		
+	else:
+		print("There is no such entity in sight.")
 
 
 #### Methods of Ultimate Power!   ####
@@ -853,6 +1038,8 @@ def inputCommands(userInput):
 			examine(getItemName(formattedInput, 1))
 		elif formattedInput[0] in ["use"]: # Use item command
 			use(getItemName(formattedInput,1))
+		elif formattedInput[0] in ["attack", "fight"]:
+			attack(getItemName(formattedInput, 1))
 		# if player typed a non-recognized command or string
 		else:
 			print(unrecognizedCommand())
@@ -864,6 +1051,7 @@ def gameLoop():
 	global currentLocation
 	global player
 	global printLocationDetails
+	global state
 
 	while (player.hp > 0):  #change to while (player.hp > 0)
 		if (currentLocation != oldLocation or printLocationDetails):
