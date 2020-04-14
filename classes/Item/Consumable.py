@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from .Item import Item
 
 class Consumable(Item):
@@ -5,3 +6,7 @@ class Consumable(Item):
 		super().__init__(itemId, name, description)
 		self.use = use
 		self.statEffect = statEffect
+
+	@abstractmethod
+	def useMethod(self):
+		pass

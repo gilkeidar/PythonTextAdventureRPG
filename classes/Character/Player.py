@@ -26,8 +26,9 @@ class Player(Character):
 		self.defense = 1;
 		self.inventory = []; # inventory array
 		# self.equipment = [None, None]; # equipment array
-		self.armor = None
-		self.weapon = None
+		# self.armor = None
+		# self.weapon = None
+		self.equipment = {"armor": None, "weapon": None}
 
 		# Change to equipment dictionary
 
